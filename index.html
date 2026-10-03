@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minecraft Web Mini</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #70a0ff; font-family: sans-serif; user-select: none; }
+        canvas { display: block; }
+        /* Nút bấm điều khiển trên màn hình điện thoại */
+        #controls { position: absolute; bottom: 20px; left: 20px; display: grid; grid-template-columns: repeat(3, 50px); grid-gap: 5px; }
+        .btn { width: 50px; height: 50px; background: rgba(255,255,255,0.5); border: 2px solid #fff; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; }
+        #action-btn { position: absolute; bottom: 20px; right: 20px; width: 70px; height: 70px; background: rgba(0,255,0,0.6); border: 3px solid #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; }
+    </style>
+    <!-- Tải thư viện đồ họa 3D Three.js -->
+    <script src="https://cloudflare.com"></script>
+</head>
+<body>
+
+    <!-- Các nút bấm trên điện thoại -->
+    <div id="controls">
+        <div></div><div class="btn" id="btn-up">▲</div><div></div>
+        <div class="btn" id="btn-left">◀</div><div></div><div class="btn" id="btn-right">▶</div>
+        <div></div><div class="btn" id="btn-down">▼</div><div></div>
+    </div>
+    <div id="action-btn">ĐẶT</div>
+
+    <script>
+        // 1. Khởi tạo Không gian 3D (Scene, Camera, Renderer)
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x70a0ff); // Màu bầu trời
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Ánh sáng
+        const light = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(light);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+
+        // 2. Tạo hình dáng khối vuông (Hình học & Màu sắc)
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshLambertMaterial({ color: 0x55aa44 }); // Màu cỏ xanh
+
+        // Tạo mặt đất 10x10 khối
+        const blocks = [];
+        for(let x = -5; x < 5; x++) {
+            for(let z = -5; z < 5; z++) {
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(x, 0, z);
+                scene.add(cube);
+                blocks.push(cube);
+            }
+        }
+
+        // Đặt góc nhìn camera cố định nhìn xuống thế giới
+        camera.position.set(0, 5, 8);
+        camera.lookAt(0, 0, 0);
+
+        // 3. Xử lý di chuyển bằng nút bấm trên màn hình
+        let move = { up: false, down: false, left: false, right: false };
+        
+        document.getElementById('btn-up').ontouchstart = () => move.up = true;
+        document.getElementById('btn-up').ontouchend = () => move.up = false;
+        document.getElementById('btn-down').ontouchstart = () => move.down = true;
+        document.getElementById('btn-down').ontouchend = () => move.down = false;
+        document.getElementById('btn-left').ontouchstart = () => move.left = true;
+        document.getElementById('btn-left').ontouchend = () => move.left = false;
+        document.getElementById('btn-right').ontouchstart = () => move.right = true;
+        document.getElementById('btn-right').ontouchend = () => move.right = false;
+
+        // Bấm nút Tròn màu xanh để đặt thêm khối ngẫu nhiên
+        document.getElementById('action-btn').ontouchstart = () => {
+            const rx = Math.floor(Math.random() * 6) - 3;
+            const ry = Math.floor(Math.random() * 3) + 1;
+            const rz = Math.floor(Math.random() * 6) - 3;
+            
+            const newCube = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: 0x8b5a2b })); // Khối đất nâu
+            newCube.position.set(rx, ry, rz);
+            scene.add(newCube);
+        };
+
+        // 4. Vòng lặp chạy game (Cập nhật liên tục khung hình)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Di chuyển camera dựa trên nút bấm
+            if(move.up) camera.position.z -= 0.1;
+            if(move.down) camera.position.z += 0.1;
+            if(move.left) camera.position.x -= 0.1;
+            if(move.right) camera.position.x += 0.1;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Tự động căn chỉnh khi xoay màn hình điện thoại
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
